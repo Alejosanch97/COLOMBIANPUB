@@ -311,6 +311,52 @@ function PedirSection({ idMesero, esAdmin, mesas, setMesas, menu, baseLista, ref
     }
   };
 
+  /* ---- CAMBIAR CANTIDAD de una línea (+ / −), optimista ---- */
+  const cambiarCantidad = async (item, delta) => {
+    if (item._pendiente) {
+      mostrarToast("Espera a que termine de guardar");
+      return;
+    }
+    const cantidadActual = num(item.cantidad);
+    const nuevaCantidad = cantidadActual + delta;
+    const precioUnit = cantidadActual > 0 ? num(item.subtotal) / cantidadActual : 0;
+
+    // Si baja a 0, es como quitar la línea
+    if (nuevaCantidad <= 0) {
+      anularItem(item);
+      return;
+    }
+
+    const nuevoSubtotal = precioUnit * nuevaCantidad;
+    const diff = nuevoSubtotal - num(item.subtotal);
+
+    // 1) Actualizamos YA en pantalla
+    setItems((prev) => prev.map((it) =>
+      it.id_detalle === item.id_detalle
+        ? { ...it, cantidad: nuevaCantidad, subtotal: nuevoSubtotal }
+        : it));
+    setTotal((prev) => prev + diff);
+
+    // 2) Guardamos en el servidor por detrás
+    const r = await postAction({
+      action: "actualizar_cantidad",
+      id_detalle: item.id_detalle,
+      cantidad: nuevaCantidad,
+    });
+
+    if (r && r.status === "success") {
+      if (typeof r.total === "number") setTotal(r.total);
+    } else {
+      // Falló: revertimos
+      setItems((prev) => prev.map((it) =>
+        it.id_detalle === item.id_detalle
+          ? { ...it, cantidad: cantidadActual, subtotal: num(item.subtotal) }
+          : it));
+      setTotal((prev) => prev - diff);
+      mostrarToast(r?.message || "No se pudo cambiar la cantidad");
+    }
+  };
+
   const volverAMesas = () => {
     setMesaSel(null);
     setCuenta(null);
@@ -501,13 +547,29 @@ function PedirSection({ idMesero, esAdmin, mesas, setMesas, menu, baseLista, ref
           <ul className="bar-cuenta-list">
             {items.map((it) => (
               <li key={clean(it.id_detalle)} className={it._pendiente ? "pendiente" : ""}>
-                <span className="bar-ci-qty">{clean(it.cantidad)}×</span>
-                <span className="bar-ci-name">
-                  {clean(it.nombre_producto)}
-                  {clean(it.nota) && <i className="bar-ci-nota"> · {clean(it.nota)}</i>}
-                </span>
-                <span className="bar-ci-price">{money(it.subtotal)}</span>
-                <button className="bar-ci-del" onClick={() => anularItem(it)} aria-label="Quitar">×</button>
+                <div className="bar-ci-top">
+                  <span className="bar-ci-name">
+                    {clean(it.nombre_producto)}
+                    {clean(it.nota) && <i className="bar-ci-nota"> · {clean(it.nota)}</i>}
+                  </span>
+                  <span className="bar-ci-price">{money(it.subtotal)}</span>
+                  <button className="bar-ci-del" onClick={() => anularItem(it)} aria-label="Quitar">×</button>
+                </div>
+                <div className="bar-ci-qtyctrl">
+                  <button
+                    className="bar-ci-step"
+                    onClick={() => cambiarCantidad(it, -1)}
+                    disabled={it._pendiente}
+                    aria-label="Quitar uno"
+                  >−</button>
+                  <span className="bar-ci-count">{clean(it.cantidad)}</span>
+                  <button
+                    className="bar-ci-step"
+                    onClick={() => cambiarCantidad(it, +1)}
+                    disabled={it._pendiente}
+                    aria-label="Agregar uno"
+                  >＋</button>
+                </div>
               </li>
             ))}
           </ul>

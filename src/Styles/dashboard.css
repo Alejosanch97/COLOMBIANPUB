@@ -273,19 +273,16 @@
 }
 .bar-cuenta-list { list-style: none; }
 .bar-cuenta-list li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   padding: 12px 0;
   border-bottom: 1px solid rgba(58, 45, 30, 0.5);
 }
 .bar-cuenta-list li:last-child { border-bottom: none; }
-.bar-ci-qty {
-  flex-shrink: 0;
-  min-width: 30px;
-  font-weight: 700;
-  color: var(--amber);
-  font-size: 14px;
+
+/* Fila superior: nombre, precio, quitar */
+.bar-ci-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 .bar-ci-name {
   flex: 1;
@@ -317,6 +314,36 @@
   transition: background 0.18s;
 }
 .bar-ci-del:active { background: rgba(140, 59, 46, 0.3); }
+
+/* Fila inferior: controles − cantidad + */
+.bar-ci-qtyctrl {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 10px;
+}
+.bar-ci-step {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--amber);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.12s, border-color 0.18s;
+}
+.bar-ci-step:active:not(:disabled) { transform: scale(0.9); border-color: var(--amber); }
+.bar-ci-step:disabled { opacity: 0.4; cursor: not-allowed; }
+.bar-ci-count {
+  min-width: 28px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--txt);
+  font-variant-numeric: tabular-nums;
+}
 
 /* Buscador + categorías */
 .bar-menu-head {
@@ -950,10 +977,9 @@
 .bar-cuenta-list li.pendiente {
   opacity: 0.55;
 }
-.bar-cuenta-list li.pendiente .bar-ci-qty::after {
-  content: "•";
+.bar-cuenta-list li.pendiente .bar-ci-name::after {
+  content: " •";
   color: var(--amber);
-  margin-left: 2px;
   animation: bar-pulse 0.8s ease-in-out infinite;
 }
 
