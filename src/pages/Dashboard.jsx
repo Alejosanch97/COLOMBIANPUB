@@ -96,6 +96,12 @@ export const Dashboard = ({ user: propUser, onLogout }) => {
     if (Array.isArray(ms)) { setMesas(ms); cacheSet("mesas", ms); }
   }, []);
 
+  // Refresco del menú (tras activar/desactivar/editar productos)
+  const refrescarMenu = useCallback(async () => {
+    const mn = await fetchJSON(`${API_URL}?menu=1`);
+    if (Array.isArray(mn)) { setMenu(mn); cacheSet("menu", mn); }
+  }, []);
+
   useEffect(() => {
     if (userData) cargarBase();
   }, [userData, cargarBase]);
@@ -143,7 +149,9 @@ export const Dashboard = ({ user: propUser, onLogout }) => {
         {tab === "cobrar" && esCajero && (
           <CobrarSection idCajero={idMesero} onCobrado={refrescarMesas} />
         )}
-        {tab === "productos" && esCajero && <ProductosSection esAdmin={esAdmin} />}
+        {tab === "productos" && esCajero && (
+          <ProductosSection esAdmin={esAdmin} onMenuCambiado={refrescarMenu} />
+        )}
         {tab === "analisis" && esAdmin && <AnalisisSection />}
       </main>
 
@@ -267,7 +275,8 @@ function PedirSection({ idMesero, esAdmin, mesas, setMesas, menu, baseLista, ref
     } else {
       setItems((prev) => prev.filter((it) => it.id_detalle !== tempId));
       setTotal((prev) => prev - subtotal);
-      mostrarToast("No se pudo guardar, intenta de nuevo");
+      // Si el backend lo rechazó por estar inactivo, muestra su mensaje real
+      mostrarToast(r?.message || "No se pudo guardar, intenta de nuevo", 2800);
     }
   };
 

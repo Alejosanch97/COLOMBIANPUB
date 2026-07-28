@@ -430,11 +430,17 @@
 .bar-modal {
   width: 100%;
   max-width: 480px;
+  /* Nunca más alto que la pantalla, con scroll interno si hace falta */
+  max-height: 88vh;
+  max-height: 88dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background: linear-gradient(180deg, var(--card2) 0%, var(--bg2) 100%);
   border: 1px solid var(--line);
   border-bottom: none;
   border-radius: 24px 24px 0 0;
-  padding: 24px 22px calc(24px + env(safe-area-inset-bottom));
+  /* Padding inferior generoso: cuenta la barra de Safari y el gesto del iPhone */
+  padding: 24px 22px calc(28px + env(safe-area-inset-bottom));
   animation: bar-slide-up 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 @keyframes bar-slide-up {
@@ -1123,4 +1129,52 @@
   background: rgba(127, 176, 105, 0.18);
   color: var(--green);
   border: 1px solid rgba(127, 176, 105, 0.4);
+}
+
+/* ============================================================
+   ANTI-ZOOM MÓVIL — evita desbordes horizontales que fuercen zoom
+   ============================================================ */
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;   /* nada se sale por los lados */
+  -webkit-text-size-adjust: 100%;  /* iOS no reajusta el texto solo */
+  text-size-adjust: 100%;
+}
+* {
+  /* evita que un elemento ancho (una imagen, tabla, etc.) empuje el layout */
+  max-width: 100%;
+}
+
+/* ============================================================
+   FIX MÓVIL — modal siempre visible y alcanzable
+   ============================================================ */
+
+/* El contenido del dash usa toda la altura real del móvil (dvh cuenta la barra de Safari) */
+.bar-dash {
+  min-height: 100dvh;
+}
+
+/* En móvil, el modal deja un pequeño margen arriba para no pegarse al notch
+   y su contenido nunca queda debajo de la barra del navegador */
+@media (max-width: 600px) {
+  .bar-modal-overlay {
+    align-items: flex-end;
+  }
+  .bar-modal {
+    /* Deja aire arriba del modal para que se vea que hay algo detrás */
+    max-height: 90dvh;
+    padding-bottom: calc(32px + env(safe-area-inset-bottom));
+  }
+  /* Los botones de acción del modal se quedan visibles al final,
+     con separación clara del borde */
+  .bar-modal-actions {
+    margin-top: 4px;
+  }
+}
+
+/* El grid de mesas/productos nunca se pega a los bordes */
+.bar-dash-main {
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
 }

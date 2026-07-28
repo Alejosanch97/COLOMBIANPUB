@@ -22,7 +22,7 @@ const postAction = async (payload) =>
    - Cajero: solo ve el panel de Productos.
    - Admin:  ve un switch para alternar Productos / Usuarios.
    ============================================================ */
-export function ProductosSection({ esAdmin }) {
+export function ProductosSection({ esAdmin, onMenuCambiado }) {
   const [vista, setVista] = useState("productos"); // productos | usuarios
 
   // El cajero (no admin) solo ve productos, sin switch.
@@ -33,7 +33,7 @@ export function ProductosSection({ esAdmin }) {
           <h2 className="bar-sec-title">Menú</h2>
           <p className="bar-sec-sub">Activa o desactiva productos disponibles</p>
         </div>
-        <ProductosPanel esAdmin={false} />
+        <ProductosPanel esAdmin={false} onMenuCambiado={onMenuCambiado} />
       </div>
     );
   }
@@ -57,7 +57,9 @@ export function ProductosSection({ esAdmin }) {
         >👤 Usuarios</button>
       </div>
 
-      {vista === "productos" ? <ProductosPanel esAdmin={true} /> : <UsuariosSection />}
+      {vista === "productos"
+        ? <ProductosPanel esAdmin={true} onMenuCambiado={onMenuCambiado} />
+        : <UsuariosSection />}
     </div>
   );
 }
@@ -67,7 +69,7 @@ export function ProductosSection({ esAdmin }) {
    - Cajero: activar / desactivar
    - Admin: además crear / editar / borrar
    ============================================================ */
-function ProductosPanel({ esAdmin }) {
+function ProductosPanel({ esAdmin, onMenuCambiado }) {
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState("");
@@ -106,6 +108,7 @@ function ProductosPanel({ esAdmin }) {
       cargar();
     } else {
       mostrarToast(nuevo === "SI" ? "Producto activado" : "Producto desactivado");
+      if (onMenuCambiado) onMenuCambiado(); // refresca el menú de Pedir
     }
   };
 
@@ -160,6 +163,7 @@ function ProductosPanel({ esAdmin }) {
       mostrarToast(modal.modo === "crear" ? "Producto creado" : "Producto actualizado");
       setModal(null);
       cargar();
+      if (onMenuCambiado) onMenuCambiado();
     } else {
       mostrarToast(r?.message || "Error al guardar");
     }
@@ -177,6 +181,7 @@ function ProductosPanel({ esAdmin }) {
     if (r && r.status === "success") {
       mostrarToast("Producto borrado");
       cargar();
+      if (onMenuCambiado) onMenuCambiado();
     } else {
       mostrarToast(r?.message || "No se pudo borrar");
     }
