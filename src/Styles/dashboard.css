@@ -417,31 +417,34 @@
 .bar-modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  z-index: 90;
   background: rgba(10, 8, 5, 0.7);
   backdrop-filter: blur(4px);
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
-  padding: 0;
+  padding: 20px;
   animation: bar-fade 0.2s ease;
 }
 @keyframes bar-fade { from { opacity: 0; } to { opacity: 1; } }
 .bar-modal {
   width: 100%;
-  max-width: 480px;
+  max-width: 440px;
   /* Nunca más alto que la pantalla, con scroll interno si hace falta */
-  max-height: 88vh;
-  max-height: 88dvh;
+  max-height: 85vh;
+  max-height: 85dvh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   background: linear-gradient(180deg, var(--card2) 0%, var(--bg2) 100%);
   border: 1px solid var(--line);
-  border-bottom: none;
-  border-radius: 24px 24px 0 0;
-  /* Padding inferior generoso: cuenta la barra de Safari y el gesto del iPhone */
-  padding: 24px 22px calc(28px + env(safe-area-inset-bottom));
-  animation: bar-slide-up 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 22px;
+  padding: 24px 22px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
+  animation: bar-modal-pop 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes bar-modal-pop {
+  from { transform: scale(0.94); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 @keyframes bar-slide-up {
   from { transform: translateY(100%); }
@@ -895,8 +898,6 @@
 @media (min-width: 600px) {
   .bar-mesas-grid { grid-template-columns: repeat(3, 1fr); }
   .bar-prod-grid { grid-template-columns: repeat(3, 1fr); }
-  .bar-modal-overlay { align-items: center; }
-  .bar-modal { border-radius: 24px; border-bottom: 1px solid var(--line); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1155,19 +1156,11 @@ html, body {
   min-height: 100dvh;
 }
 
-/* En móvil, el modal deja un pequeño margen arriba para no pegarse al notch
-   y su contenido nunca queda debajo de la barra del navegador */
+/* En móvil, el modal se centra y flota lejos del bottom-nav */
 @media (max-width: 600px) {
-  .bar-modal-overlay {
-    align-items: flex-end;
-  }
   .bar-modal {
-    /* Deja aire arriba del modal para que se vea que hay algo detrás */
-    max-height: 90dvh;
-    padding-bottom: calc(32px + env(safe-area-inset-bottom));
+    max-height: 82dvh;
   }
-  /* Los botones de acción del modal se quedan visibles al final,
-     con separación clara del borde */
   .bar-modal-actions {
     margin-top: 4px;
   }
@@ -1177,4 +1170,35 @@ html, body {
 .bar-dash-main {
   padding-left: max(16px, env(safe-area-inset-left));
   padding-right: max(16px, env(safe-area-inset-right));
+}
+
+/* ============================================================
+   BOTÓN LIBERAR MESA (abierta por error)
+   ============================================================ */
+.bar-cuenta-vacia-wrap {
+  text-align: center;
+}
+.bar-liberar-btn {
+  margin-top: 14px;
+  background: transparent;
+  border: 1px solid rgba(140, 59, 46, 0.45);
+  color: #e5a99b;
+  border-radius: 100px;
+  padding: 10px 20px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s;
+}
+.bar-liberar-btn:hover:not(:disabled) {
+  background: rgba(140, 59, 46, 0.12);
+  border-color: var(--wine);
+}
+.bar-liberar-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.bar-liberar-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }

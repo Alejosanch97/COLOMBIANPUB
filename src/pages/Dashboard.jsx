@@ -189,10 +189,15 @@ function PedirSection({ idMesero, esAdmin, mesas, setMesas, menu, baseLista, ref
   const [modalMesa, setModalMesa] = useState(false);
   const [nombreMesa, setNombreMesa] = useState("");
   const [creandoMesa, setCreandoMesa] = useState(false);
+  const [liberando, setLiberando] = useState(false);
+  const toastTimer = useRef(null);
 
   const mostrarToast = (msg, dur = 2000) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
     setToast(msg);
-    setTimeout(() => setToast(""), dur);
+    if (dur > 0) {
+      toastTimer.current = setTimeout(() => setToast(""), dur);
+    }
   };
 
   /* ---- ABRIR MESA (optimista) ---- */
@@ -252,9 +257,14 @@ function PedirSection({ idMesero, esAdmin, mesas, setMesas, menu, baseLista, ref
     setItems((prev) => [...prev, nuevoItem]);
     setTotal((prev) => prev + subtotal);
 
+    // Cerramos el modal de inmediato
     setModalProd(null);
     setCantidad(1);
     setNota("");
+
+    // Aviso DESDE EL INICIO: el mesero sabe que debe esperar.
+    // dur=0 -> se queda fijo hasta que lo actualicemos.
+    mostrarToast(`⏳ Agregando ${clean(prod.nombre)}…`, 0);
 
     const r = await postAction({
       action: "agregar_producto",
@@ -271,11 +281,11 @@ function PedirSection({ idMesero, esAdmin, mesas, setMesas, menu, baseLista, ref
           ? { ...it, id_detalle: r.id_detalle, _pendiente: false }
           : it));
       if (typeof r.total === "number") setTotal(r.total);
-      mostrarToast(`✓ ${cant}× ${clean(prod.nombre)} guardado`, 2600);
+      // Ahora sí, el mensaje cambia a "agregado" (guardado en el Excel)
+      mostrarToast(`✓ ${cant}× ${clean(prod.nombre)} agregada`, 2400);
     } else {
       setItems((prev) => prev.filter((it) => it.id_detalle !== tempId));
       setTotal((prev) => prev - subtotal);
-      // Si el backend lo rechazó por estar inactivo, muestra su mensaje real
       mostrarToast(r?.message || "No se pudo guardar, intenta de nuevo", 2800);
     }
   };
@@ -307,6 +317,26 @@ function PedirSection({ idMesero, esAdmin, mesas, setMesas, menu, baseLista, ref
     setItems([]);
     setTotal(0);
     refrescarMesas();
+  };
+
+  /* ---- LIBERAR MESA abierta por error (solo si está vacía) ---- */
+  const liberarMesaError = async () => {
+    if (!mesaSel) return;
+    setLiberando(true);
+    mostrarToast("Liberando mesa…", 0);
+    const r = await postAction({ action: "liberar_mesa", id_mesa: clean(mesaSel.id_mesa) });
+    setLiberando(false);
+    if (r && r.status === "success") {
+      // Reflejamos localmente que quedó libre
+      setMesas((prev) => prev.map((m) =>
+        clean(m.id_mesa) === clean(mesaSel.id_mesa)
+          ? { ...m, id_cuenta_activa: "", estado: "libre" }
+          : m));
+      mostrarToast("✓ Mesa liberada", 2000);
+      volverAMesas();
+    } else {
+      mostrarToast(r?.message || "No se pudo liberar la mesa", 2800);
+    }
   };
 
   /* ---- CREAR MESA (admin) ---- */
@@ -457,7 +487,16 @@ function PedirSection({ idMesero, esAdmin, mesas, setMesas, menu, baseLista, ref
           <b>{money(total)}</b>
         </div>
         {items.length === 0 ? (
-          <p className="bar-cuenta-vacia">Sin productos aún. Agrega del menú abajo.</p>
+          <div className="bar-cuenta-vacia-wrap">
+            <p className="bar-cuenta-vacia">Sin productos aún. Agrega del menú abajo.</p>
+            <button
+              className="bar-liberar-btn"
+              onClick={liberarMesaError}
+              disabled={liberando}
+            >
+              {liberando ? "Liberando…" : "↩ ¿Mesa equivocada? Liberar"}
+            </button>
+          </div>
         ) : (
           <ul className="bar-cuenta-list">
             {items.map((it) => (
